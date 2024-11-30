@@ -39,10 +39,10 @@ def get_alpha_vantage_btc_history(api_keys):
             df.to_csv("btc_price_data_alpha_vantage.csv", index=False)
             dfr = df[::-1]
             dfr.to_csv("btc_price_data_alpha_vantage_ful.csv", index=False)
-            print("Saved full BTC price data from Alpha Vantage to btc_price_data_alpha_vantage_full.csv")
+            print("Saved full BTC price data from Alpha Vantage to btc_price_data_alpha_vantage_full.csv", flush=True)
             return dfr
         except Exception as e:
-            print(f"Error fetching BTC price using {api_key}: {str(e)}")
+            print(f"Error fetching BTC price using {api_key}: {str(e)}", flush=True)
             time.sleep(5)
 
     try:
