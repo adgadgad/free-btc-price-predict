@@ -13,7 +13,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.model_selection import train_test_split
 from ta import add_all_ta_features
 
-api_keys = ["IOBHACZOQONDVU8B"]
+api_keys = ["IOBHACZOQONDVU8B", "STNP6RH4H5WMQKSN"]
 
 def get_alpha_vantage_btc_history(api_keys):
     for api_key in api_keys:
