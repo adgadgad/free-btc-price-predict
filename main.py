@@ -40,20 +40,57 @@ def get_alpha_vantage_btc_history(api_keys):
             dfr = df[::-1]
             dfr.to_csv("btc_price_data_alpha_vantage_ful.csv", index=False)
             print("Saved full BTC price data from Alpha Vantage to btc_price_data_alpha_vantage_full.csv", flush=True)
-            return dfr
+            # Fetch current time from the internet
+            response = requests.get("http://worldtimeapi.org/api/timezone/Etc/UTC")
+            current_time = response.json()["datetime"]
+            todays_date = pd.to_datetime(current_time[:10])  # Extract date from fetched time
+            # Update the row for today's data (if it exists)
+            if todays_date in dfr['Date'].values:
+                # Get the current price from CoinDesk API
+                current_price = get_current_btc_price() 
+                print("assssissjdnuiks")
+                dfr.loc[dfr['Date'] == todays_date, ['open', 'high', 'low', 'close']] = current_price
+                dfr.loc[dfr['Date'] == todays_date, ['Date']] = todays_date  # Update the date
+                return dfr
+            else:
+                # Fetch the current price from CoinDesk API
+                current_price = get_current_btc_price()
+                print("assssissjdnuiks")
+                # Get yesterday's date
+                yesterday_date = todays_date - pd.Timedelta(days=1)
+                # Find the volume from yesterday
+                yesterday_volume = dfr[dfr['Date'] == yesterday_date]['volume'].values[0]
+                # Create a new row for today's data
+                new_row = pd.DataFrame({
+                    "Timestamp": pd.Timestamp.now().strftime('%Y-%m-%d'),
+                    "open": dfr[dfr['Date'] == yesterday_date]['close'].values[0],
+                    "high": current_price,
+                    "low": current_price,
+                    "volume": yesterday_volume,
+                    "close": current_price,
+                    "Date": todays_date
+                }, index=[0])
+                # Append the new row to the DataFrame
+                dfr = pd.concat([dfr, new_row], ignore_index=True)
+                dfr.to_csv("btc_price_data_alpha_vantage_ful.csv", index=False)
+                return dfr
         except Exception as e:
             print(f"Error fetching BTC price using {api_key}: {str(e)}", flush=True)
             time.sleep(5)
-
     try:
         df = pd.read_csv("btc_price_data_alpha_vantage_ful.csv")
-        todays_date = pd.to_datetime(pd.Timestamp.now().strftime('%Y-%m-%d'))
+        df['Date'] = pd.to_datetime(df['Date'])  # Convert 'Date' column to datetime
+        # Fetch current time from the internet
+        response = requests.get("http://worldtimeapi.org/api/timezone/Etc/UTC")
+        current_time = response.json()["datetime"]
+        todays_date = pd.to_datetime(current_time[:10])  # Extract date from fetched time
+        # Check if today's date exists in the DataFrame
         if todays_date in df['Date'].values:
-            yesterdays_volume = df[df['Date'] == (todays_date - pd.Timedelta(days=1))]['volume'].values[0]
-            current_price = get_current_btc_price()
-            df.loc[df['Date'] == todays_date, ['open', 'high', 'low', 'close']] = current_price
-            df.loc[df['Date'] == todays_date, ['volume']] = yesterdays_volume
+            # Update the row with today's date (replace existing row)
+            df.loc[df['Date'] == todays_date, ['open', 'high', 'low', 'close']] = get_current_btc_price()
+            df.loc[df['Date'] == todays_date, ['Date']] = todays_date  # Update the date
         else:
+            # Append a new row with today's data
             current_price = get_current_btc_price()
             new_row = pd.DataFrame({
                 "Timestamp": pd.Timestamp.now().strftime('%Y-%m-%d'),
@@ -86,6 +123,8 @@ def get_current_btc_price():
 btc_history = get_alpha_vantage_btc_history(api_keys)
 
 btc_data = pd.read_csv("btc_price_data_alpha_vantage_ful.csv")
+
+# ... rest of your code ...
 
 def predict_price_trend(btc_data, period=5):
     btc_data["SMA_20"] = btc_data["close"].rolling(window=20).mean()
@@ -176,7 +215,8 @@ class S(BaseHTTPRequestHandler):
             'current_price': current_price_global,
             'tomorrow_price': tomorrow_price_global,
             'price_comparison': price_comparison_global,
-            'recommendation': recommendation_global
+            'recommendation': recommendation_global,
+            'timestamp_warning': "**Note:** All timestamps are in UTC time."
         }
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
