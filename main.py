@@ -216,7 +216,7 @@ class S(BaseHTTPRequestHandler):
             'tomorrow_price': tomorrow_price_global,
             'price_comparison': price_comparison_global,
             'recommendation': recommendation_global,
-            'timestamp_warning': "**Note:** All timestamps are in UTC time."
+            'timestamp_warning': "**Note:** All timestamp at our historical data are in UTC time. So please check UTC time before making the prediction because that is also what the prediction time and day will be. "
         }
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
