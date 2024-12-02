@@ -1,4 +1,5 @@
 import json
+import random
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import threading
@@ -166,12 +167,37 @@ def predict_price_trend(btc_data, period=5):
     return next_price[0]
 
 
+def getdateforprint():
+    global time_infoo
+    # Get the current time in UTC from the World Time API
+    url = "http://worldtimeapi.org/api/timezone/Etc/UTC"
+    response = requests.get(url)
+
+    # If the request is successful, extract and print the date and time
+    if response.status_code == 200:
+        data = response.json()
+        utc_datetime = data['datetime']
+
+        # Split the date and time part
+        date, time = utc_datetime.split("T")
+        year, month, day = date.split("-")
+        hour, minute, second = time.split(":")[:3]
+
+        # Print the components
+        time_infoo = f"Year: {year}, Month: {month}, Day: {day}, Hour: {hour}, Minute: {minute}, Second: {second}"
+    else:
+        print("Failed to fetch the UTC time")
+
+
 def update_predictions():
+    
+    
     current_price = get_current_btc_price()
     btc_history = get_alpha_vantage_btc_history(api_keys)
     tomorrow_price = predict_price_trend(btc_data)
     five_day_prices = predict_price_trend(btc_data, period=5)
     tomorrow_price = float(tomorrow_price[0])
+    getdateforprint()
     five_day_prices = [float(price) for price in five_day_prices]
     five_day_prices_with_index = enumerate(five_day_prices)
     price_comparison = ""
@@ -200,7 +226,10 @@ def update_predictions():
     price_comparison_global = price_comparison
     recommendation_global = recommendation
 
-schedule.every(200).minutes.do(update_predictions)
+
+schedule.every(60).minutes.do(update_predictions)
+
+
 
 update_predictions()
 
@@ -216,7 +245,7 @@ class S(BaseHTTPRequestHandler):
             'tomorrow_price': tomorrow_price_global,
             'price_comparison': price_comparison_global,
             'recommendation': recommendation_global,
-            'timestamp_warning': "**Note:** All timestamp at our historical data are in UTC time. So please check UTC time before making the prediction because that is also what the prediction time and day will be. "
+            'timestamp_warning': f"**Note:** All timestamp at our historical data are in UTC time. So please check UTC time before making the prediction because that is also what the prediction time and day will be. updates every hour last updated time was: {time_infoo}"
         }
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
@@ -249,14 +278,14 @@ def run_server(server_class=HTTPServer, handler_class=S, port=8080):
         }
         self.wfile.write(json.dumps(response).encode('utf-8'))
 
-    schedule.every(1).minutes.do(handle_get_request)
+    
 
     httpd.serve_forever()
 
 def run_scheduler():
     while True:
         schedule.run_pending()
-        time.sleep(200)
+        time.sleep(1)
 
 if __name__ == '__main__':
     from threading import Thread
