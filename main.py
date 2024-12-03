@@ -80,7 +80,7 @@ def get_alpha_vantage_btc_history(api_keys):
             time.sleep(5)
     try:
         df = pd.read_csv("btc_price_data_alpha_vantage_ful.csv")
-        df['Date'] = pd.to_datetime(df['Date'])  # Convert 'Date' column to datetime
+        df["Date"] = pd.to_datetime(df["Timestamp"].str.split().str[0])  # Only keep the date part
         # Fetch current time from the internet
         response = requests.get("http://worldtimeapi.org/api/timezone/Etc/UTC")
         current_time = response.json()["datetime"]
